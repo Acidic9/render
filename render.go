@@ -41,7 +41,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"html/template"
-  "io"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -49,6 +49,8 @@ import (
 	"strings"
 
 	"github.com/oxtoacart/bpool"
+
+	"regexp"
 
 	"github.com/go-martini/martini"
 )
@@ -287,6 +289,16 @@ func (r *renderer) HTML(status int, name string, binding interface{}, htmlOpt ..
 	if err != nil {
 		http.Error(r, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// add doctype if it doesn't exist
+	doc, err := ioutil.ReadAll(buf)
+	if err == nil {
+		i := regexp.MustCompile(`(?i)^(.*)<(\s+)?!doctype(\s+)?html(\s+)?>(.*)<(\s+)?html`).Match(doc)
+		if !i {
+			doc = append([]byte("<!DOCTYPE html>"), doc...)
+			buf = bytes.NewBuffer(doc)
+		}
 	}
 
 	// template rendered fine, write out the result
